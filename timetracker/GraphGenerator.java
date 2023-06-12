@@ -4,7 +4,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
 
+import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.DataSet;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
@@ -13,15 +15,19 @@ import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.util.ArrayList;
 
+
+
 public class GraphGenerator extends AppCompatActivity {
-    LineChart mpLineChart;
+    BarChart mpBarChart;
+
+    private final
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_graph_generator);
 
-        mpLineChart = findViewById(R.id.line_chart);
+        mpBarChart = findViewById(R.id.barChart);
         LineDataSet lineDataSet = new LineDataSet(getDataValues(), "Data Set 1");
         ArrayList<ILineDataSet> dataSets = new ArrayList<>();
         dataSets.add(lineDataSet);
@@ -31,7 +37,7 @@ public class GraphGenerator extends AppCompatActivity {
 
     }
 
-    private ArrayList<Entry> getDataValues() {
+    private ArrayList<BarEntry> getDataValues() {
         ArrayList<Entry> dataVals = new ArrayList<>();
         dataVals.add(new Entry(0, 20));
         dataVals.add(new Entry(1, 26));

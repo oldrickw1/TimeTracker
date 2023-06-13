@@ -4,9 +4,11 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.widget.Button;
 
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.Description;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
@@ -21,42 +23,24 @@ import java.util.Arrays;
 
 
 public class GraphGenerator extends AppCompatActivity {
+    BarChartCreator chartCreator;
+    TimeSpendDOA timeSpendDOA;
     BarChart mpBarChart;
-
-    private final ArrayList<ActivityEntry> dummyEntries = new ArrayList<>(
-            Arrays.asList(
-                    new ActivityEntry(4, 0,"Programming"),
-                    new ActivityEntry(5, 1, "Programming"),
-                    new ActivityEntry(3, 2, "Programming"),
-                    new ActivityEntry(5, 3, "Programming"),
-                    new ActivityEntry(7, 4, "Programming")
-            )
-    );
-
-
-
+    Button nextButton;
+    Button prevButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_graph_generator);
 
+
         mpBarChart = findViewById(R.id.barChart);
-        BarDataSet barDataSet1 = new BarDataSet(getDataValues1(), "Data Set 1");
-        barDataSet1.setBarBorderColor(Color.GREEN);
+        chartCreator = new BarChartCreator(mpBarChart);
+        timeSpendDOA = new TimeSpendDOA();
 
-        BarData barData = new BarData(barDataSet1);
+        chartCreator.fillBarChart(timeSpendDOA.getDummyEntries());
 
-        mpBarChart.setData(barData);
-        mpBarChart.invalidate();
 
-    }
-
-    private ArrayList<BarEntry> getDataValues1() {
-        ArrayList<BarEntry> dataVals = new ArrayList<>();
-        for (ActivityEntry entry : dummyEntries) {
-            dataVals.add(new BarEntry(entry.getDay(), entry.getTime()));
-        }
-        return dataVals;
     }
 }

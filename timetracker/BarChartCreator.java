@@ -11,6 +11,7 @@ import com.github.mikephil.charting.data.BarEntry;
 import java.util.ArrayList;
 
 public class BarChartCreator {
+    //todo: format the charts!
     private BarChart barChart;
 
     public BarChartCreator(BarChart barChart) {

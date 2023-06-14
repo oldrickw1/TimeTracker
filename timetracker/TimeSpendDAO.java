@@ -8,12 +8,17 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 public class TimeSpendDAO extends SQLiteOpenHelper {
 
+
+
     public TimeSpendDAO(Context context) {
         super(context, "timeSpend.db", null, 1);
+
     }
+
 
     final private ArrayList<ActivityEntry> dummyEntries = new ArrayList<>(
             Arrays.asList(
@@ -75,9 +80,10 @@ public class TimeSpendDAO extends SQLiteOpenHelper {
 
     }
 
-    public void addOne(ActivityEntry activityEntry) {
+    public void addOne(Date start) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL("INSERT INTO timeSpend (timeStart, timeEnd) VALUES (3, 5)");
+        db.execSQL("INSERT INTO timeSpend (timeStart, timeEnd) VALUES ('Wed Jun 14 18:29:58 GMT+02:00 2023', strftime('%Y-%m-%d %H:%M:%S', 'now'));");
+
 
     }
 }

@@ -7,12 +7,15 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.Button;
 
+import java.util.Date;
+
 public class MainActivity extends AppCompatActivity {
     Button toGraphButton;
     Button startStopButton;
     Boolean started = false;
     TimeSpendDAO timeSpendDAO;
-
+    Date date;
+    private Date startTime;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,6 +23,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         timeSpendDAO = new TimeSpendDAO(this);
+
+        date = new Date();
 
         toGraphButton = findViewById(R.id.goToOtherActivity);
         startStopButton = findViewById(R.id.startStop);
@@ -39,13 +44,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void stop() {
+        timeSpendDAO.addOne(startTime);
         startStopButton.setText("Start");
         startStopButton.setBackgroundColor(Color.GREEN);
         started = false;
     }
 
     private void start() {
-        timeSpendDAO.addOne(new ActivityEntry(1,1,null));
+        startTime = new Date(date.getTime());
         startStopButton.setText("Stop");
         startStopButton.setBackgroundColor(Color.RED);
         started = true;

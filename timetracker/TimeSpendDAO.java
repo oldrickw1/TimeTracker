@@ -1,8 +1,10 @@
 package com.example.timetracker;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -80,10 +82,35 @@ public class TimeSpendDAO extends SQLiteOpenHelper {
 
     }
 
-    public void addOne(Date start) {
+    public void addOne(long start, long stop) {
+        long delta = stop - start;
+        Log.i("OLLIE", "addOne: delta: " + delta);
+
         SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL("INSERT INTO timeSpend (timeStart, timeEnd) VALUES ('Wed Jun 14 18:29:58 GMT+02:00 2023', strftime('%Y-%m-%d %H:%M:%S', 'now'));");
+        db.execSQL("INSERT INTO timeSpend (timeStart, timeEnd) VALUES ('" + start + "', '" + stop + "');");
+        db.close();
+    }
 
+    public void deleteAllDbEntries() {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.execSQL("DELETE FROM timeSpend;");
+        db.close();
+    }
 
+    public ArrayList<ActivityEntry> getAllEntries() {
+        ArrayList<ActivityEntry> activityEntries = new ArrayList<>();
+        int day = 5;
+
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cs = db.rawQuery("SELECT * FROM timeSpend;", null);
+        while (cs.moveToNext()) {
+            float time = (float)(cs.getLong(2) - cs.getLong(1)) / (float)3600;
+
+            activityEntries.add(new ActivityEntry(time, day++, "Study"));
+        }
+        db.close();
+        cs.close();
+
+        return activityEntries;
     }
 }

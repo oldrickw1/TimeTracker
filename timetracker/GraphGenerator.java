@@ -37,7 +37,7 @@ public class GraphGenerator extends AppCompatActivity {
         chartCreator = new BarChartCreator(mpBarChart);
         timeSpendDOA = new TimeSpendDAO(this);
 
-        chartCreator.fillBarChart(timeSpendDOA.getDummyEntries());
+        chartCreator.fillBarChart(timeSpendDOA.getAllEntries());
         updateWeeklyTotalText(); //todo: ask on r/learnprogramming how to deal with the separation of data queries (weekly total and the update data from the chartCreator)
 
         prevButton.setOnClickListener(updateChart);

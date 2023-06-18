@@ -13,7 +13,7 @@ import com.github.mikephil.charting.charts.BarChart;
 
 public class GraphGenerator extends AppCompatActivity {
     BarChartCreator chartCreator;
-    TimeSpendDAO timeSpendDOA;
+    ActivityTimeLogDAO timeSpendDOA;
     BarChart mpBarChart;
     TextView weeklyTotalTV;
     Button nextButton;
@@ -35,7 +35,7 @@ public class GraphGenerator extends AppCompatActivity {
         weeklyTotalTV = findViewById(R.id.weeklyTotal);
 
         chartCreator = new BarChartCreator(mpBarChart);
-        timeSpendDOA = new TimeSpendDAO(this);
+        timeSpendDOA = new ActivityTimeLogDAO(this);
 
         chartCreator.fillBarChart(timeSpendDOA.getAllEntries());
         updateWeeklyTotalText(); //todo: ask on r/learnprogramming how to deal with the separation of data queries (weekly total and the update data from the chartCreator)

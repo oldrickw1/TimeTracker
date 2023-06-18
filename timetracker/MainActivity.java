@@ -13,7 +13,6 @@ import android.widget.Toast;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Date;
 
 public class MainActivity extends AppCompatActivity {
     Button toGraphButton;
@@ -21,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
     Button deleteAllEntries;
     Button getAllEntries;
     Boolean started = false;
-    TimeSpendDAO timeSpendDAO;
+    ActivityTimeLogDAO activityTimeLogDAO;
     long startTime;
     long stopTime;
 
@@ -30,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        timeSpendDAO = new TimeSpendDAO(this);
+        activityTimeLogDAO = new ActivityTimeLogDAO(this);
 
         toGraphButton = findViewById(R.id.goToOtherActivity);
         startStopButton = findViewById(R.id.startStop);
@@ -52,11 +51,11 @@ public class MainActivity extends AppCompatActivity {
 
         deleteAllEntries.setOnClickListener(v -> {
             showToast("!!! DELETING ALL ENTRIES !!!");
-            timeSpendDAO.deleteAllDbEntries();
+            activityTimeLogDAO.deleteAllDbEntries();
         });
 
         getAllEntries.setOnClickListener(v -> {
-            ArrayList<ActivityEntry> entries = timeSpendDAO.getAllEntries();
+            ArrayList<ActivityEntry> entries = activityTimeLogDAO.getAllEntries();
             for (ActivityEntry entry : entries) {
                 showToast(Float.toString(entry.getTime()));
                 Log.i("OLLIE", entry.toString());
@@ -66,18 +65,26 @@ public class MainActivity extends AppCompatActivity {
 
     private void stop() {
         stopTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
-        timeSpendDAO.addOne(startTime, stopTime);
-        startStopButton.setText("Start");
-        startStopButton.setBackgroundColor(Color.GREEN);
+        activityTimeLogDAO.addOne(startTime, stopTime);
+        toggleStartStopButton();
         started = false;
     }
 
     private void start() {
         startTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
-        startStopButton.setText("Stop");
-        startStopButton.setBackgroundColor(Color.RED);
+        toggleStartStopButton();
         started = true;
 
+    }
+
+    private void toggleStartStopButton() {
+        if (started) {
+            startStopButton.setText("Stop");
+            startStopButton.setBackgroundColor(Color.RED);
+        } else {
+            startStopButton.setText("Start");
+            startStopButton.setBackgroundColor(Color.GREEN);
+        }
     }
 
 

@@ -31,13 +31,13 @@ public class ActivityTimeLogDAO extends SQLiteOpenHelper {
         Log.i("OLLIE", "addOne: delta: " + delta);
 
         SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL("INSERT INTO timeSpend (timeStart, timeEnd) VALUES ('" + start + "', '" + stop + "');");
+        db.execSQL("INSERT INTO activity_time_log (timeStart, timeEnd) VALUES ('" + start + "', '" + stop + "');");
         db.close();
     }
 
     public void deleteAllDbEntries() {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.execSQL("DELETE FROM timeSpend;");
+        db.execSQL("DELETE FROM activity_time_log;");
         db.close();
     }
 
@@ -46,7 +46,7 @@ public class ActivityTimeLogDAO extends SQLiteOpenHelper {
         int day = 5;
 
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cs = db.rawQuery("SELECT * FROM timeSpend;", null);
+        Cursor cs = db.rawQuery("SELECT * FROM activity_time_log;", null);
         while (cs.moveToNext()) {
             float time = (float)(cs.getLong(2) - cs.getLong(1)) / (float)3600;
 

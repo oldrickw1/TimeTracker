@@ -52,11 +52,11 @@ public class GraphGenerator extends AppCompatActivity {
     }
 
     private View.OnClickListener updateChart = v -> {
-        if (v.getId() == R.id.prevButton) {
-            chartCreator.fillBarChart(timeSpendDOA.getPrevWeek());
-        } else if (v.getId() == R.id.nextButton) {
-            chartCreator.fillBarChart(timeSpendDOA.getNextWeek());
-        }
+//        if (v.getId() == R.id.prevButton) {
+//            chartCreator.fillBarChart(timeSpendDOA.getPrevWeek());
+//        } else if (v.getId() == R.id.nextButton) {
+//            chartCreator.fillBarChart(timeSpendDOA.getNextWeek());
+//        }
         updateWeeklyTotalText();
     };
 

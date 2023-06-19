@@ -1,34 +1,46 @@
 package com.example.timetracker;
 
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.util.Date;
+
 public class ActivityEntry {
-    public ActivityEntry(float time, int day, String activity) {
+    private float time;
+    private ZonedDateTime date;
+    private String activity;
+
+    public ActivityEntry(float time, ZonedDateTime date, String activity) {
         this.time = time;
-        this.day = day;
+        this.date = date;
         this.activity = activity;
     }
 
-    private float time;
-    private int day;
-    private String activity;
 
 
     public float getTime() {
         return time;
     }
 
-    public int getDay() {
-        return day;
+    public ZonedDateTime getDate() {
+        return date;
     }
 
     public String getActivity() {
         return activity;
     }
 
+    public float getHoursAndMinutes() {
+        int hours = (int) (time / 60);
+        int minutes = (int) (time % 60);
+        String hoursAndMinutes = hours + "." + minutes;
+        return Float.parseFloat(hoursAndMinutes);
+    }
+
     @Override
     public String toString() {
         return "ActivityEntry{" +
                 "time=" + time +
-                ", day=" + day +
+                ", day=" + date +
                 ", activity='" + activity + '\'' +
                 '}';
     }

@@ -36,6 +36,9 @@ public class MainActivity extends AppCompatActivity {
         deleteAllEntries = findViewById(R.id.deleteAllEntries);
         getAllEntries = findViewById(R.id.getEntries);
 
+        toggleStartStopButton(0);
+
+
         toGraphButton.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, GraphGenerator.class);
             startActivity(intent);
@@ -57,33 +60,33 @@ public class MainActivity extends AppCompatActivity {
         getAllEntries.setOnClickListener(v -> {
             ArrayList<ActivityEntry> entries = activityTimeLogDAO.getAllEntries();
             for (ActivityEntry entry : entries) {
-                showToast(Float.toString(entry.getTime()));
-                Log.i("OLLIE", entry.toString());
+                showToast(entry.toString());
+                Log.i("OLLIE", "MainActivity.getAllEntries: " + entry.toString());
             }
         });
     }
 
     private void stop() {
-        stopTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
+        stopTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * 1000;
         activityTimeLogDAO.addOne(startTime, stopTime);
-        toggleStartStopButton();
+        toggleStartStopButton(0);
         started = false;
     }
 
     private void start() {
-        startTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
-        toggleStartStopButton();
+        startTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * 1000;
+        toggleStartStopButton(1);
         started = true;
 
     }
 
-    private void toggleStartStopButton() {
-        if (started) {
-            startStopButton.setText("Stop");
-            startStopButton.setBackgroundColor(Color.RED);
-        } else {
+    private void toggleStartStopButton(int onOffFlag) {
+        if (onOffFlag == 0) {
             startStopButton.setText("Start");
             startStopButton.setBackgroundColor(Color.GREEN);
+        } else if (onOffFlag == 1) {
+            startStopButton.setText("Stop");
+            startStopButton.setBackgroundColor(Color.RED);
         }
     }
 

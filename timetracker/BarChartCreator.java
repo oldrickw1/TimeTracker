@@ -23,7 +23,7 @@ public class BarChartCreator {
         this.barChart = barChart;
     }
 
-    public void fillBarChart(ArrayList<ActivityEntry> entries) {
+    public void fillBarChart(ArrayList<IntervalDTO> entries) {
         LimitLine limitLine = new LimitLine(7f, "Goal");
         limitLine.setLineColor(Color.GREEN);
         limitLine.setLineWidth(2f);
@@ -67,18 +67,18 @@ public class BarChartCreator {
         return description;
     }
 
-    private ArrayList<BarEntry> extractDataValues(ArrayList<ActivityEntry> entries) {
+    private ArrayList<BarEntry> extractDataValues(ArrayList<IntervalDTO> entries) {
         ArrayList<BarEntry> dataVals = new ArrayList<>();
         int i = 0;
-        for (ActivityEntry entry : entries) {
+        for (IntervalDTO entry : entries) {
             dataVals.add(new BarEntry(i++, (entry.getHoursAndMinutes())));
         }
         return dataVals;
     }
 
-    private ArrayList<String> getXAxisLabels(ArrayList<ActivityEntry> entries) {
+    private ArrayList<String> getXAxisLabels(ArrayList<IntervalDTO> entries) {
         ArrayList<String> labels = new ArrayList<>();
-        for (ActivityEntry entry : entries) {
+        for (IntervalDTO entry : entries) {
             labels.add(entry.getDate().format(DateTimeFormatter.ofPattern("EEE")));
         }
         return labels;

@@ -1,101 +1,166 @@
 package com.example.timetracker;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
-
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    Button toGraphButton;
-    Button startStopButton;
-    Button deleteAllEntries;
-    Button getAllEntries;
-    Boolean started = false;
-    ActivityTimeLogDAO activityTimeLogDAO;
-    long startTime;
-    long stopTime;
+    // Constants
+    private static final String TAG = "DEBUG";
+    private static final String SHARED_PREFS = "sharedPrefs";
+    private static final String START = "startTime";
+    private static final int MILLIES_IN_SEC = 1000;
+
+    // View declarations
+    private TextView timeTodayTV;
+    private Button toGraphBtn;
+    private Button startStopBtn;
+    private Button deleteAllEntriesBtn;
+    private Button getEntriesBtn;
+    private Button getEntriesBtwnBtn;
+
+    // State variables
+    private Boolean started = false;
+    private long startTime;
+    private long stopTime;
+
+    // Dependencies
+    private ActivityTimeLogDAO activityTimeLogDAO;
+
+    // Assigning Views
+    private void assignViews() {
+        timeTodayTV = findViewById(R.id.timeTodayTV);
+        toGraphBtn = findViewById(R.id.to_graph_btn);
+        startStopBtn = findViewById(R.id.start_stop_btn);
+        deleteAllEntriesBtn = findViewById(R.id.deleteAllEntriesBtn);
+        getEntriesBtn = findViewById(R.id.getEntriesBtn);
+        getEntriesBtwnBtn = findViewById(R.id.getEntriesBtwnBtn);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         activityTimeLogDAO = new ActivityTimeLogDAO(this);
+        assignViews();
+        setupButtons();
+    }
 
-        toGraphButton = findViewById(R.id.goToOtherActivity);
-        startStopButton = findViewById(R.id.startStop);
-        deleteAllEntries = findViewById(R.id.deleteAllEntries);
-        getAllEntries = findViewById(R.id.getEntries);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadData();
+        if (startTime == 0) {
+            toggleStartStopButton(0);
+        } else {
+            toggleStartStopButton(1 );
+        }
+    }
 
-        toggleStartStopButton(0);
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (startTime != 0) {
+            updateSharedPref();
+            Toast.makeText(this, "DATA SAVED", Toast.LENGTH_SHORT).show();
+        }
+    }
 
+    // Setup
+    private void setupButtons() {
+        setupToGraphButton();
+        setupStartStopButton();
+        setupDeleteEntriesButton();
+        setupGetEntriesButton();
+        setupGetEntriesBtwnButton();
+    }
 
-        toGraphButton.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, GraphGenerator.class);
-            startActivity(intent);
+    private void setupGetEntriesBtwnButton() {
+        getEntriesBtwnBtn.setOnClickListener(v -> {
+            List<DailyTimeSummary> dailyTimeSummaries = activityTimeLogDAO.getDailyTimesBetween(0,  System.currentTimeMillis());
+            for (DailyTimeSummary day : dailyTimeSummaries) {
+                Toast.makeText(this, day.toString(), Toast.LENGTH_SHORT).show();
+            }
         });
+    }
 
-        startStopButton.setOnClickListener(v -> {
+    private void setupToGraphButton() {
+        toGraphBtn.setOnClickListener(v -> {
+            startActivity(new Intent(MainActivity.this, GraphDisplay.class));
+        });
+    }
+
+    private void setupGetEntriesButton() {
+        getEntriesBtn.setOnClickListener(v -> {
+            for (IntervalDTO entry : activityTimeLogDAO.getAllEntries()) {
+                Toast.makeText(this, "Entry: " + entry.toString(), Toast.LENGTH_LONG).show();
+                Log.i(TAG, "entry: " + entry.toString());
+            }
+        });
+    }
+
+    private void setupDeleteEntriesButton() {
+        deleteAllEntriesBtn.setOnClickListener(v -> {
+            activityTimeLogDAO.deleteAllDbEntries();
+            Toast.makeText(this, "You've deleted all entries!", Toast.LENGTH_SHORT).show();
+        });
+    }
+
+    private void setupStartStopButton() {
+        startStopBtn.setOnClickListener(v -> {
             if (started) {
                 stop();
             } else {
                 start();
             }
         });
+    }
 
-        deleteAllEntries.setOnClickListener(v -> {
-            showToast("!!! DELETING ALL ENTRIES !!!");
-            activityTimeLogDAO.deleteAllDbEntries();
-        });
-
-        getAllEntries.setOnClickListener(v -> {
-            ArrayList<ActivityEntry> entries = activityTimeLogDAO.getAllEntries();
-            for (ActivityEntry entry : entries) {
-                showToast(entry.toString());
-                Log.i("OLLIE", "MainActivity.getAllEntries: " + entry.toString());
-            }
-        });
+    // Helper methods
+    private void start() {
+        startTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * MILLIES_IN_SEC;
+        toggleStartStopButton(1);
     }
 
     private void stop() {
-        stopTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * 1000;
+        stopTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * MILLIES_IN_SEC;
         activityTimeLogDAO.addOne(startTime, stopTime);
         toggleStartStopButton(0);
-        started = false;
+        startTime = 0;
+        updateSharedPref();
     }
 
-    private void start() {
-        startTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * 1000;
-        toggleStartStopButton(1);
-        started = true;
-
+    private void updateSharedPref() {
+        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putLong(START, startTime);
+        editor.apply();
     }
 
     private void toggleStartStopButton(int onOffFlag) {
         if (onOffFlag == 0) {
-            startStopButton.setText("Start");
-            startStopButton.setBackgroundColor(Color.GREEN);
+            started = false;
+            startStopBtn.setText("Start");
+            startStopBtn.setBackgroundColor(Color.GREEN);
         } else if (onOffFlag == 1) {
-            startStopButton.setText("Stop");
-            startStopButton.setBackgroundColor(Color.RED);
+            started = true;
+            startStopBtn.setText("Stop");
+            startStopBtn.setBackgroundColor(Color.RED);
         }
     }
 
-
-    private void showToast(String message) {
-        Context context = getApplicationContext();
-        int duration = Toast.LENGTH_SHORT;
-
-        Toast toast = Toast.makeText(context, message, duration);
-        toast.show();
+    private void loadData() {
+        SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
+        startTime = sharedPreferences.getLong(START, 0);
+        Toast.makeText(this, "StartTime: " + startTime, Toast.LENGTH_SHORT).show();
     }
 }

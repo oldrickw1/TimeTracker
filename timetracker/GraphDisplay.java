@@ -18,15 +18,14 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Objects;
 
 
-public class GraphGenerator extends AppCompatActivity {
+public class GraphDisplay extends AppCompatActivity {
     private static final String RUNNING_DIFFERENCE_STRING = "Running Difference: ";
     BarChartCreator chartCreator;
-    ActivityTimeLogDAO timeSpendDOA;
+    ActivityTimeLogDAO activityTimeLogDAO;
     BarChart mpBarChart;
     TextView weeklyTotalTV;
     TextView runningDifferenceTV;
@@ -42,7 +41,7 @@ public class GraphGenerator extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_graph_generator);
+        setContentView(R.layout.activity_graph_display);
 
         mpBarChart = findViewById(R.id.barChart);
         prevButton = findViewById(R.id.prevButton);
@@ -53,8 +52,7 @@ public class GraphGenerator extends AppCompatActivity {
 
 
         chartCreator = new BarChartCreator(mpBarChart);
-        timeSpendDOA = new ActivityTimeLogDAO(this);
-
+        activityTimeLogDAO = new ActivityTimeLogDAO(this);
 
         goal = 7;
 
@@ -63,7 +61,7 @@ public class GraphGenerator extends AppCompatActivity {
 
 
 //        chartCreator.fillBarChart(timeSpendDOA.getEntriesOfThisWeekSummed(getStartOfCurrentWeek(), getEndOfCurrentWeek()));
-        ArrayList<ActivityEntry> entries = timeSpendDOA.getDummyDataWeekEntries();
+        ArrayList<IntervalDTO> entries = activityTimeLogDAO.getDummyDataWeekEntries();
         chartCreator.fillBarChart(entries);
         updateWeeklyTotalText(entries);
         updateDifference(getRunningDifference(null));
@@ -100,9 +98,9 @@ public class GraphGenerator extends AppCompatActivity {
     }
 
     private View.OnClickListener updateChart = v -> {
-         ArrayList<ActivityEntry> entries = null;
+         ArrayList<IntervalDTO> entries = null;
         if (v.getId() == R.id.prevButton) {
-              entries = timeSpendDOA.getEntriesOfBetweenSummed(getStartOfCurrentWeek(), getEndOfCurrentWeek());
+              entries = activityTimeLogDAO.getDailySummedIntervals(getStartOfCurrentWeek(), getEndOfCurrentWeek());
             Toast.makeText(this, entries.toString(), Toast.LENGTH_SHORT).show();
             chartCreator.fillBarChart(entries);
 //        } else if (v.getId() == R.id.nextButton) {
@@ -116,32 +114,32 @@ public class GraphGenerator extends AppCompatActivity {
         long totalMinutes;
         long totalGoalTime;
         if (!Objects.isNull(endDate)) {
-            totalMinutes = getTotalMinutes(timeSpendDOA.getEntriesOfBetween(startDate.toEpochSecond(ZoneOffset.UTC), endDate.toEpochSecond(ZoneOffset.UTC)));
-            totalGoalTime = Duration.between(startDate, endDate).toDays() * goal * timeSpendDOA.MINUTES_IN_HOUR;
+            totalMinutes = getTotalMinutes(activityTimeLogDAO.getEntriesOfBetween(startDate.toEpochSecond(ZoneOffset.UTC), endDate.toEpochSecond(ZoneOffset.UTC)));
+            totalGoalTime = Duration.between(startDate, endDate).toDays() * goal * activityTimeLogDAO.MINUTES_IN_HOUR;
         } else {
-            totalMinutes = getTotalMinutes(timeSpendDOA.getAllEntries());
-            totalGoalTime = Duration.between(startDate, LocalDateTime.now()).toDays() * goal * timeSpendDOA.MINUTES_IN_HOUR;
+            totalMinutes = getTotalMinutes(activityTimeLogDAO.getAllEntries());
+            totalGoalTime = Duration.between(startDate, LocalDateTime.now()).toDays() * goal * activityTimeLogDAO.MINUTES_IN_HOUR;
         }
         long difference = totalMinutes - totalGoalTime;
         return toHoursAndMinute(difference);
     }
 
-    private long getTotalMinutes(ArrayList<ActivityEntry> allEntries) {
+    private long getTotalMinutes(ArrayList<IntervalDTO> allEntries) {
         long totMins = 0;
-        for (ActivityEntry entry : allEntries) {
-            totMins += entry.getTime();
+        for (IntervalDTO entry : allEntries) {
+            totMins += entry.getMinutes();
         }
         return totMins;
     }
 
-    private void updateWeeklyTotalText(ArrayList<ActivityEntry> entries) {
+    private void updateWeeklyTotalText(ArrayList<IntervalDTO> entries) {
         weeklyTotalTV.setText(WEEKLY_TOTAL_STRING + getWeeklyTotal(entries));
     }
 
-    private String getWeeklyTotal(ArrayList<ActivityEntry> entries) {
+    private String getWeeklyTotal(ArrayList<IntervalDTO> entries) {
         int tot = 0;
-        for (ActivityEntry entry : entries) {
-            tot += entry.getTime();
+        for (IntervalDTO entry : entries) {
+            tot += entry.getMinutes();
         }
         return toHoursAndMinute(tot);
     }

@@ -4,83 +4,75 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.data.BarEntry;
 
 import java.time.DayOfWeek;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Objects;
+import java.util.List;
+import java.util.Map;
 
 
 public class GraphDisplay extends AppCompatActivity {
     private static final String RUNNING_DIFFERENCE_STRING = "Running Difference: ";
-    BarChartCreator chartCreator;
-    ActivityTimeLogDAO activityTimeLogDAO;
-    BarChart mpBarChart;
-    TextView weeklyTotalTV;
-    TextView runningDifferenceTV;
-    Button nextButton;
-    Button prevButton;
-    Button homeButton;
-    int goal;
-    int weeklyTotal;
-    LocalDateTime startDate;
-    final String WEEKLY_TOTAL_STRING = "Weekly Total: ";
+    private static final String TAG = "DEBUG";
 
+    private BarChartController chartController;
+    private IntervalDAO intervalDAO;
+    private BarChart barChart;
+    private TextView weeklyTotalTV;
+    private TextView runningDifferenceTV;
+    private TextView graphDateTV;
+    private Button nextButton;
+    private Button prevButton;
+    private Button homeButton;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_graph_display);
-
-        mpBarChart = findViewById(R.id.barChart);
+    private void assignViews() {
+        barChart = findViewById(R.id.barChart);
         prevButton = findViewById(R.id.prevButton);
         nextButton = findViewById(R.id.nextButton);
         homeButton = findViewById(R.id.homeButton);
         weeklyTotalTV = findViewById(R.id.weeklyTotal);
         runningDifferenceTV = findViewById(R.id.runningDifferenceTV);
-
-
-        chartCreator = new BarChartCreator(mpBarChart);
-        activityTimeLogDAO = new ActivityTimeLogDAO(this);
-
-        goal = 7;
-
-        startDate = LocalDate.of(2023, 6, 17).atStartOfDay();
-
-
-
-//        chartCreator.fillBarChart(timeSpendDOA.getEntriesOfThisWeekSummed(getStartOfCurrentWeek(), getEndOfCurrentWeek()));
-        ArrayList<IntervalDTO> entries = activityTimeLogDAO.getDummyDataWeekEntries();
-        chartCreator.fillBarChart(entries);
-        updateWeeklyTotalText(entries);
-        updateDifference(getRunningDifference(null));
-
-
-
-        prevButton.setOnClickListener(updateChart);
-        nextButton.setOnClickListener(updateChart);
-
-        homeButton.setOnClickListener(view -> {
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivity(intent);
-        });
-
-
+        graphDateTV = findViewById(R.id.graphDate);
     }
 
-    private void updateDifference(String runningDifference) {
-        runningDifferenceTV.setText(RUNNING_DIFFERENCE_STRING + runningDifference);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate: is called");
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_graph_display);
+
+        assignViews();
+        chartController = new BarChartController(barChart);
+        intervalDAO = new IntervalDAO(this);
+        setupHomeButton();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        setBarChart();
+    }
+
+    private void setBarChart() {
+        List<Interval> intervals = intervalDAO.getAllIntervalsBetween(getStartOfCurrentWeek(), getEndOfCurrentWeek());
+        Map<LocalDate, Double> totalTimeByDate = Interval.groupAndCalculateTotalTimeByDate(intervals);
+        totalTimeByDate.forEach(((localDate, aDouble) -> Log.i(TAG, "setBarChart: date: " + localDate.getDayOfWeek() + " totalTime: " + aDouble)));
+        List<BarEntry> entries = adapt(totalTimeByDate);
+        chartController.setData(entries, "Time Studied");
+        chartController.setYAxis(0, 600, 420);
+        chartController.setXAxis();
+        chartController.setLegend();
+        barChart.invalidate();
     }
 
     private long getEndOfCurrentWeek() {
@@ -97,55 +89,23 @@ public class GraphDisplay extends AppCompatActivity {
         return startOfWeekZonedDateTime.toInstant().toEpochMilli();
     }
 
-    private View.OnClickListener updateChart = v -> {
-         ArrayList<IntervalDTO> entries = null;
-        if (v.getId() == R.id.prevButton) {
-              entries = activityTimeLogDAO.getDailySummedIntervals(getStartOfCurrentWeek(), getEndOfCurrentWeek());
-            Toast.makeText(this, entries.toString(), Toast.LENGTH_SHORT).show();
-            chartCreator.fillBarChart(entries);
-//        } else if (v.getId() == R.id.nextButton) {
-//            entries = timeSpendDOA.getNextWeek()
-//            chartCreator.fillBarChart(entries);
-        updateWeeklyTotalText(entries);
+    private List<BarEntry> adapt(Map<LocalDate, Double> totalTimeByDate) {
+        List<BarEntry> barEntries = new ArrayList<>();
+        for (DayOfWeek dayOfWeek : DayOfWeek.values()) {
+            LocalDate date = LocalDate.now().with(dayOfWeek);
+            Double totalTime = totalTimeByDate.getOrDefault(date, 0.0);
+
+            // Convert dayOfWeek to float for x and totalTime to float for y
+            barEntries.add(new BarEntry(dayOfWeek.getValue(), totalTime.floatValue()));
         }
-    };
 
-    private String getRunningDifference(LocalDateTime endDate) {
-        long totalMinutes;
-        long totalGoalTime;
-        if (!Objects.isNull(endDate)) {
-            totalMinutes = getTotalMinutes(activityTimeLogDAO.getEntriesOfBetween(startDate.toEpochSecond(ZoneOffset.UTC), endDate.toEpochSecond(ZoneOffset.UTC)));
-            totalGoalTime = Duration.between(startDate, endDate).toDays() * goal * activityTimeLogDAO.MINUTES_IN_HOUR;
-        } else {
-            totalMinutes = getTotalMinutes(activityTimeLogDAO.getAllEntries());
-            totalGoalTime = Duration.between(startDate, LocalDateTime.now()).toDays() * goal * activityTimeLogDAO.MINUTES_IN_HOUR;
-        }
-        long difference = totalMinutes - totalGoalTime;
-        return toHoursAndMinute(difference);
+        return barEntries;
     }
 
-    private long getTotalMinutes(ArrayList<IntervalDTO> allEntries) {
-        long totMins = 0;
-        for (IntervalDTO entry : allEntries) {
-            totMins += entry.getMinutes();
-        }
-        return totMins;
+    private void setupHomeButton() {
+        homeButton.setOnClickListener(view -> {
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+        });
     }
-
-    private void updateWeeklyTotalText(ArrayList<IntervalDTO> entries) {
-        weeklyTotalTV.setText(WEEKLY_TOTAL_STRING + getWeeklyTotal(entries));
-    }
-
-    private String getWeeklyTotal(ArrayList<IntervalDTO> entries) {
-        int tot = 0;
-        for (IntervalDTO entry : entries) {
-            tot += entry.getMinutes();
-        }
-        return toHoursAndMinute(tot);
-    }
-
-    private String toHoursAndMinute(long tot) {
-        return (int) (tot / 60) + ":" + (int) (tot % 60) + "h";
-    }
-
 }

@@ -9,24 +9,30 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+
 import java.util.List;
+
+/*
+    Note to self:
+    This program is not loosely coupled, is not open for extension etc.
+    I will finish it without any big redesigns, but later I will make a new version that can be easily changed etc.
+    That way, instead of only drawing a barChart, it could also draw another chart etc. with only some minor changes.
+    Also, I will build it using TDD.
+ */
 
 public class MainActivity extends AppCompatActivity {
     // Constants
     private static final String TAG = "DEBUG";
     private static final String SHARED_PREFS = "sharedPrefs";
     private static final String START = "startTime";
-    private static final int MILLIES_IN_SEC = 1000;
 
     // View declarations
     private TextView timeTodayTV;
     private Button toGraphBtn;
     private Button startStopBtn;
-    private Button deleteAllEntriesBtn;
-    private Button getEntriesBtn;
-    private Button getEntriesBtwnBtn;
+    private Button deleteAllIntervalsBtn;
+    private Button getIntervalsBtn;
+    private Button geDailySummedIntervalsBtn;
 
     // State variables
     private Boolean started = false;
@@ -34,23 +40,22 @@ public class MainActivity extends AppCompatActivity {
     private long stopTime;
 
     // Dependencies
-    private ActivityTimeLogDAO activityTimeLogDAO;
+    private IntervalDAO IntervalDAO;
 
     // Assigning Views
     private void assignViews() {
         timeTodayTV = findViewById(R.id.timeTodayTV);
         toGraphBtn = findViewById(R.id.to_graph_btn);
         startStopBtn = findViewById(R.id.start_stop_btn);
-        deleteAllEntriesBtn = findViewById(R.id.deleteAllEntriesBtn);
-        getEntriesBtn = findViewById(R.id.getEntriesBtn);
-        getEntriesBtwnBtn = findViewById(R.id.getEntriesBtwnBtn);
+        deleteAllIntervalsBtn = findViewById(R.id.deleteAllIntervalsBtn);
+        getIntervalsBtn = findViewById(R.id.getIntervalsBtn);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        activityTimeLogDAO = new ActivityTimeLogDAO(this);
+        IntervalDAO = new IntervalDAO(this);
         assignViews();
         setupButtons();
     }
@@ -71,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
         if (startTime != 0) {
             updateSharedPref();
-            Toast.makeText(this, "DATA SAVED", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -79,39 +83,28 @@ public class MainActivity extends AppCompatActivity {
     private void setupButtons() {
         setupToGraphButton();
         setupStartStopButton();
-        setupDeleteEntriesButton();
-        setupGetEntriesButton();
-        setupGetEntriesBtwnButton();
-    }
-
-    private void setupGetEntriesBtwnButton() {
-        getEntriesBtwnBtn.setOnClickListener(v -> {
-            List<DailyTimeSummary> dailyTimeSummaries = activityTimeLogDAO.getDailyTimesBetween(0,  System.currentTimeMillis());
-            for (DailyTimeSummary day : dailyTimeSummaries) {
-                Toast.makeText(this, day.toString(), Toast.LENGTH_SHORT).show();
-            }
-        });
+        setupDeleteIntervalsButton();
+        setupGetIntervalsButton();
     }
 
     private void setupToGraphButton() {
-        toGraphBtn.setOnClickListener(v -> {
-            startActivity(new Intent(MainActivity.this, GraphDisplay.class));
-        });
+        toGraphBtn.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, GraphDisplay.class)));
     }
 
-    private void setupGetEntriesButton() {
-        getEntriesBtn.setOnClickListener(v -> {
-            for (IntervalDTO entry : activityTimeLogDAO.getAllEntries()) {
-                Toast.makeText(this, "Entry: " + entry.toString(), Toast.LENGTH_LONG).show();
-                Log.i(TAG, "entry: " + entry.toString());
+    // For testing
+    private void setupGetIntervalsButton() {
+        getIntervalsBtn.setOnClickListener(v -> {
+            for (Interval interval : IntervalDAO.getAllIntervals()) {
+                Toast.makeText(this, "Entry: " + interval.toString(), Toast.LENGTH_LONG).show();
             }
         });
     }
 
-    private void setupDeleteEntriesButton() {
-        deleteAllEntriesBtn.setOnClickListener(v -> {
-            activityTimeLogDAO.deleteAllDbEntries();
-            Toast.makeText(this, "You've deleted all entries!", Toast.LENGTH_SHORT).show();
+    // For testing
+    private void setupDeleteIntervalsButton() {
+        deleteAllIntervalsBtn.setOnClickListener(v -> {
+            IntervalDAO.deleteAllIntervals();
+            Toast.makeText(this, "You've deleted all Intervals!", Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -125,15 +118,14 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // Helper methods
     private void start() {
-        startTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * MILLIES_IN_SEC;
+        startTime = System.currentTimeMillis();
         toggleStartStopButton(1);
     }
 
     private void stop() {
-        stopTime = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC) * MILLIES_IN_SEC;
-        activityTimeLogDAO.addOne(startTime, stopTime);
+        stopTime = System.currentTimeMillis();
+        IntervalDAO.addOne(startTime, stopTime);
         toggleStartStopButton(0);
         startTime = 0;
         updateSharedPref();
@@ -161,6 +153,5 @@ public class MainActivity extends AppCompatActivity {
     private void loadData() {
         SharedPreferences sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE);
         startTime = sharedPreferences.getLong(START, 0);
-        Toast.makeText(this, "StartTime: " + startTime, Toast.LENGTH_SHORT).show();
     }
 }

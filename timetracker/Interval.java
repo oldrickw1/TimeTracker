@@ -4,10 +4,13 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+
 
 public class Interval {
     private long startTimeMillis;
@@ -24,6 +27,14 @@ public class Interval {
         this.activity = activity;
     }
 
+    public static long getTotalTimeFromListOfIntervals(List<Interval> intervals) {
+        long totalTimeInMillis = 0;
+        for (Interval interval : intervals) {
+            totalTimeInMillis += interval.getDurationTimeMillis();
+        }
+        return totalTimeInMillis;
+    }
+
     private ZonedDateTime getZonedDateTimeFromEpochMillis(long endTimeMillis) {
         Instant instant = Instant.ofEpochMilli(endTimeMillis);
         return ZonedDateTime.ofInstant(instant, ZoneId.systemDefault());
@@ -37,14 +48,21 @@ public class Interval {
         return (double) durationTimeMillis / 1000;
     }
 
-    public double getDurationTimeMinutes() {
-        return (double) durationTimeMillis / 1000 / 60;
+    public long getDurationTimeMinutes() {
+        return (long) durationTimeMillis / 1000 / 60;
     }
 
     public double getDurationTimeHours() {
         return (double) durationTimeMillis / 1000 / 60 / 60;
     }
 
+    public long getStartTimeMillis() {
+        return startTimeMillis;
+    }
+
+    public long getEndTimeMillis() {
+        return endTimeMillis;
+    }
 
     public String getActivity() {
         return activity;
@@ -54,33 +72,37 @@ public class Interval {
         return zonedDateTime;
     }
 
-    public float getHoursAndMinutes() {
-        int hours = (int) (durationTimeMillis / 1000 / 60);
-        int minutes = (int) ((durationTimeMillis / 1000)% 60);
-        String hoursAndMinutes = hours + "." + minutes;
-        return Float.parseFloat(hoursAndMinutes);
+    public static String getHoursAndMinutes(long timeMillis) {
+        int hours = (int) (timeMillis / 1000 / 60 / 60);
+        int minutes = (int) ((timeMillis / 1000 / 60)% 60);
+        return String.format(Locale.getDefault(), "%02dh:%02dm", hours, minutes);
+    }
+
+
+
+    public static List<Float> calculateTotalMinutesByDate(LocalDate start, LocalDate end, List<Interval> intervals) {
+        Map<Integer, List<Interval>> groupedIntervals = intervals.stream()
+                .collect(Collectors.groupingBy(interval -> interval.getZonedDateTime().getDayOfMonth()));
+
+        List<Float> totalTimeList = new ArrayList<>();
+
+        LocalDate currentDate = start;
+        while (!currentDate.isAfter(end)) {
+            List<Interval> dateIntervals = groupedIntervals.getOrDefault(currentDate.getDayOfMonth(), new ArrayList<>());
+            float totalMinutes = (float) dateIntervals.stream()
+                    .mapToDouble(Interval::getDurationTimeMinutes)
+                    .sum();
+            totalTimeList.add(totalMinutes);
+
+            currentDate = currentDate.plusDays(1);
+        }
+
+        return totalTimeList;
     }
 
     @Override
     public String toString() {
-        return "Interval{ durationTimeMillis=" + durationTimeMillis +
-                "durationTimeMinutes=" + getDurationTimeMinutes();
+        return "durationTimeMinutes=" + getDurationTimeMinutes() + ", startTime: " + startTimeMillis;
     }
-
-    public static Map<LocalDate, Double> groupAndCalculateTotalTimeByDate(List<Interval> intervals) {
-        Map<LocalDate, List<Interval>> groupedIntervals = intervals.stream()
-                .collect(Collectors.groupingBy(interval -> interval.getZonedDateTime().toLocalDate()));
-
-        Map<LocalDate, Double> totalTimeByDate = new HashMap<>();
-        groupedIntervals.forEach((date, dateIntervals) -> {
-            double totalMinutes = dateIntervals.stream()
-                    .mapToDouble(Interval::getDurationTimeMinutes)
-                    .sum();
-            totalTimeByDate.put(date, totalMinutes);
-        });
-
-        return totalTimeByDate;
-    }
-
 }
 

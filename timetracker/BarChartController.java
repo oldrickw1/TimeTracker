@@ -54,6 +54,9 @@ public class BarChartController {
     }
 
     public void setData(List<BarEntry> entries, String label) {
+        entries.forEach(entry -> {
+            System.out.println("BarChartController: yVal: " + entry.getY());
+        });
         BarDataSet barDataSet = new BarDataSet(entries, label);
         barDataSet.setValueFormatter(new HourAndMinuteFormatter());
         barDataSet.setColor(VALUE_COLOR);
@@ -76,7 +79,7 @@ public class BarChartController {
 
         @Override
         public String getAxisLabel(float value, AxisBase axis) {
-            int dayIndex = (int) value -1;
+            int dayIndex = (int) value;
             return DAY_LABELS[dayIndex];
         }
     }

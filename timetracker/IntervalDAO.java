@@ -39,15 +39,17 @@ public class IntervalDAO extends SQLiteOpenHelper {
     }
 
 
-    public List<Interval> getAllIntervalsBetween(long minDateInMillis, long maxDateInMillies) {
+    public List<Interval> getAllIntervalsBetween(long minDateInMillis, long maxDateInMillis) {
         List<Interval> intervals = new ArrayList<>();
 
         String query = "SELECT "
                 + START_TIME_MILLIS + ", "
                 + END_TIME_MILLIS + " "
-                + " FROM " + TABLE_NAME + " "
+                + "FROM " + TABLE_NAME + " "
                 + "WHERE " + START_TIME_MILLIS + " >= " + minDateInMillis + " "
-                + "AND " + END_TIME_MILLIS + " <= " + maxDateInMillies + ";";
+                + "AND " + END_TIME_MILLIS + " <= " + maxDateInMillis + " "
+                + "ORDER BY " + END_TIME_MILLIS + ";";
+
 
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cs = db.rawQuery(query, null);
@@ -69,3 +71,4 @@ public class IntervalDAO extends SQLiteOpenHelper {
         return new Interval(startTimeMillis, endTimeMillis, "Study");
     }
 }
+
